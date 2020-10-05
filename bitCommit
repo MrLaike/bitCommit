@@ -1,0 +1,94 @@
+#!/bin/bash
+
+HOOK_KEY="knl8n13t9qon1ygs"
+USER_ID=68
+PROTOCOL=https
+SITE=asap64.bitrix24.ru
+FORMATE='%Y-%m-%d %T'
+
+
+filter='FILTER[]=&'
+order='ORDER[]=&'
+params='PARAMS[]=&'
+select='SELECT[]=&'
+
+setSection() {
+	echo 1
+}
+
+getUrlWithToken() {
+	echo $PROTOCOL://$SITE/rest/$USER_ID/$HOOK_KEY/
+}
+
+
+getProfile() {
+	action=profile
+	curl `getUrlWithToken`$action | jq -r '.result'
+}
+
+getAllTask() {
+	action=task.item.list
+	filter='FILTER[ACCOMPLICE]='$USER_ID'&'
+	order='ORDER[TITLE]=asc&'
+	select='SELECT[ID]=ID&'
+	response=$(curl -s "`getUrlWithToken`$action?$order$filter")
+	jq ' .[] | .[] | {id: .ID, title: .TITLE}' <<< $response
+
+}
+
+setTask() {
+	echo 1	
+}
+defaultTime() {
+	echo $(( 7*60*60+12*60+1 ))
+}
+
+commit() {
+	action=task.elapseditem.add
+	datetime="ARFIELDS[CREATED_DATE]='$(date +"$FORMATE")'"
+
+	response=$(curl -g -s "`getUrlWithToken`$action?TASKID=$taskId&ARFIELDS[SECONDS]=$time&ARFIELDS[COMMENT_TEXT]=$comment&$datetime" | jq -r '.error')
+
+	if [ $response == null ]
+	then
+		echo 'OK' 
+	else
+		echo 'ERROR'
+	fi
+}
+
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+	-i|--id)
+	taskId="$2"
+	shift
+	shift
+	;;
+    -t|--time)
+    time="$2"
+    shift 
+    shift 
+    ;;
+    -m|--message)
+    comment="$2"
+    shift 
+    shift 
+    ;;
+	*)    
+    function+=("$1") 
+    shift  
+    ;;
+esac
+done
+
+if [ -z "$time" ]
+then
+	time=`defaultTime`
+fi
+
+$function
+
