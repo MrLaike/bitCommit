@@ -1,9 +1,9 @@
 #!/bin/bash
 
-HOOK_KEY="knl8n13t9qon1ygs"
-USER_ID=68
+HOOK_KEY=""
+USER_ID=
 PROTOCOL=https
-SITE=asap64.bitrix24.ru
+SITE=*.bitrix24.ru
 FORMATE='%Y-%m-%d %T'
 
 
